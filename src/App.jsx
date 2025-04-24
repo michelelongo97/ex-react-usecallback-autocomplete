@@ -1,21 +1,40 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+
+const debounce = (callback, delay) => {
+  let timeout = 0;
+  return (value) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      callback(value);
+    }, delay);
+  };
+};
 
 function App() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   console.log(results);
 
-  useEffect(() => {
+  const fetchProducts = async (query) => {
     if (!query.trim()) {
       setResults([]);
       return;
     }
-    fetch(
-      `https://boolean-spec-frontend.vercel.app/freetestapi/products?search=${query}`
-    )
-      .then((res) => res.json())
-      .then((data) => setResults(data))
-      .catch((error) => console.error(error));
+    try {
+      const response = await fetch(
+        `https://boolean-spec-frontend.vercel.app/freetestapi/products?search=${query}`
+      );
+      const data = await response.json();
+      setResults(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const debouncedFetchProducts = useCallback(debounce(fetchProducts, 500), []);
+
+  useEffect(() => {
+    debouncedFetchProducts(query);
   }, [query]);
 
   return (
